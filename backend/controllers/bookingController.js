@@ -1,4 +1,5 @@
 const Booking = require('../models/Booking');
+const Resource = require('../models/Resource');
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 
@@ -8,9 +9,32 @@ exports.getMyBookings = catchAsync(async (req, res) => {
 });
 
 exports.createBooking = catchAsync(async (req, res) => {
+  const { resourceId, date, time, color } = req.body;
+  const resource = await Resource.findById(resourceId);
+
+  if (!resource) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'No resource found with that ID'
+    });
+  }
+
+  if (!resource.available) {
+    return res.status(409).json({
+      status: 'fail',
+      message: 'This resource is currently unavailable'
+    });
+  }
+
   const booking = await Booking.create({
-    ...req.body,
-    user: req.user.id
+    user: req.user.id,
+    resourceId: resource._id,
+    resource: resource.name,
+    date,
+    time,
+    price: resource.price * 2,
+    color: color || resource.color,
+    status: 'Pending'
   });
 
   res.status(201).json({ status: 'success', data: { booking } });

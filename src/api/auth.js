@@ -16,9 +16,14 @@ const persistSession = session => {
   return session;
 };
 
-const apiRequest = async (url, options = {}) => {
+export const apiRequest = async (url, options = {}) => {
+  const token = getSession()?.token;
   const response = await fetch(`${API_URL}${url}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {})
+    },
     ...options
   });
 
