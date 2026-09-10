@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 const resourceRoutes = require("./routes/resourceRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 process.on('uncaughtException', err => {
   console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
@@ -43,13 +44,19 @@ mongoose
   });
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'CampusHub API is running' });
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? 'ok' : 'degraded',
+    database: databaseReady ? 'connected' : 'unavailable',
+    message: databaseReady ? 'CampusHub API is running' : 'CampusHub API is running without a database connection'
+  });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
